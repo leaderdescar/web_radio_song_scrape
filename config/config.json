@@ -1,0 +1,9 @@
+{
+  "DEFAULT": {
+    "user": "scrapper",
+    "password": "IndieRadioFor$2019",
+    "host": "192.168.86.199",
+    "database": "playlist_ae_db"
+  }
+}
+
