@@ -29,7 +29,7 @@ class Utils(object):
         cur_dir = str(pathlib.Path.cwd())
         path_parts = cur_dir.partition('/RadioWebScraper')
         cur_dir = path_parts[0]
-        with open(cur_dir +'/RadioWebScraper/config/config.json', 'r') as f:
+        with open(cur_dir +'/config/config.json', 'r') as f:
             config = json.load(f)
         
         db_config_dic = {}
@@ -37,6 +37,7 @@ class Utils(object):
         db_config_dic['password'] = config['DEFAULT']['password']
         db_config_dic['host'] = config['DEFAULT']['host']
         db_config_dic['database'] = config['DEFAULT']['database']
+        db_config_dic['schema'] = config['DEFAULT']['schema']
         
         return db_config_dic
     

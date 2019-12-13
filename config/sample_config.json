@@ -1,0 +1,9 @@
+{
+  "DEFAULT": {
+    "user": "database user name",
+    "password": "database user password ",
+    "host": "datbase ip address or server name",
+    "database": "database name"
+  }
+}
+

@@ -1,5 +1,5 @@
 from radio_webscraper.dao import DBConnection
-from radio_webscraper.parser import Parser
+from radio_webscraper.parsers.old_parser import OldParser
 from radio_webscraper.utils import Utils
 import logging
 
@@ -11,11 +11,12 @@ class SongListListener(object):
 
     def __init__(self):
 
-        db_config = Utils.get_config()
+        db_config = Utils.get_config(self)
         self.dao_obj = DBConnection(db_config['user'], 
                                      db_config['password'],
                                      db_config['host'], 
-                                     db_config['database'])
+                                     db_config['database'],
+                                     db_config['schema'])
         self.dao_obj.create_cnx_pool()
         '''Start up
             Get list of stations and url from DB --method should be in DOA
@@ -67,11 +68,11 @@ class SongListListener(object):
             if db_last_played == '':
             #last_played_in_db
                 self.dao_obj.get_connection()
-                db_last_played_id = self.dao_obj.last_played_in_db(station_id)
+                db_last_played_id = self.dao_obj.last_song_by_staion_id_saved(station_id)
                 self.dao_obj.close_connection()
             
             #parse webpage
-            parser = Parser()
+            parser = OldParser()
             radio_web_palylist = parser.get_webpage(station_url)
             web_current_song = parser.parse_webpage(radio_web_palylist, station_id, db_last_played_id, page_type)
             last_web_song_played_id = web_current_song.html_song_id

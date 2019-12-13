@@ -1,0 +1,17 @@
+# Django stuff:
+*.log
+local_settings.py
+
+
+#project files:
+config/config.json
+config/.config.json
+*.pyc
+
+#enviornment related files
+.radio
+.vscode
+
+#pycache
+*.pyc
+

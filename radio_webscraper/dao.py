@@ -5,12 +5,12 @@ Created on Dec 29, 2018
 '''
 
 from radio_webscraper.utils import Utils
-import mysql.connector
-from mysql.connector.connection import MySQLConnection
-from mysql.connector import pooling
-from mysql.connector import Error
-from mysql.connector import errorcode
 import logging
+from sqlalchemy.engine import create_engine
+import pg8000
+
+
+
 
 class DBConnection(object):
     '''
@@ -18,7 +18,7 @@ class DBConnection(object):
     '''
 
 
-    def __init__(self,user,password,host,database):
+    def __init__(self,user,password,host,database,schema):
         '''
         Constructor
         '''
@@ -26,123 +26,97 @@ class DBConnection(object):
         self.password=password
         self.host=host
         self.database=database
+        self.schema=schema
+
+
 
     def create_cnx_pool (self):
-        
-        try:
-            self.connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="song_lstn_pool",
-                                                                               pool_size=5,
-                                                                               pool_reset_session=True,
-                                                                               host=self.host,
-                                                                               database=self.database, 
-                                                                               user=self.user,
-                                                                               password=self.password)
-            logging.debug("Printing connection pool properties ")
-            logging.debug("Connection Pool Name - ", self.connection_pool.pool_name)
-            logging.debug("Connection Pool Size - ", self.connection_pool.pool_size)
-        except mysql.connector.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                logging.error( '''Something is wrong with your user name or password''')
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                logging.error( '''Database does not exist: %s''',self.database)
-            else:
-                logging.error(err)
-        #else:
-            #self.current_cursor = self.connection_pool.cursor(buffered=True)
-            #return self.connection_pool
+        #no need for try and catch, already built into sqlalchemy
+        db_url=("postgresql+pg8000://%s:%s@%s:5432/%s"%(self.user,
+                                                self.password,
+                                                self.host,
+                                                self.database))
+
+        self.connection_pool=create_engine(db_url,max_overflow=0)
             
     def get_connection(self):
-        
-        #TODO: change over to connection pool
-        self.cnx = self.connection_pool.get_connection()
-        if self.cnx.is_connected():
-            db_Info = self.cnx.get_server_info()
-            logging.debug("Connected to MySQL database using connection pool ... MySQL Server version on ",db_Info)
-            self.current_cursor = self.cnx.cursor(buffered=True)
+        self.cnx=self.connection_pool.connect()
             
     def run_test(self):
         query=('''SELECT VERSION ()''')
-        
-        self.current_cursor.execute(query)
-        
-        results = self.current_cursor.fetchone()
+
+        results=self.cnx.execute(query)
         # Check if anything at all is returned
         if results:
             return True
         else:
             return False 
         
-    def last_played_in_db (self,web_station_id,native_playlist_id):
+    def last_song_by_staion_id_saved (self,web_station_id):
         '''
-        Checks if the current song is already in the DB based on page
-        native song id
+        Checks if the current song is already in the DB based on page's
+         song timestamp
         '''
-        query=('''SELECT native_playlist_id as check_value FROM song_instance_t '''
-               +'''WHERE web_station_id = %s''')
+        query=f"SELECT MAX(playlist_song_timestamp) as check_value FROM {self.schema}.song_instance_t "\
+               f"WHERE web_station_id = {web_station_id}"
         
-        self.current_cursor.execute(query,(web_station_id,native_playlist_id))
-        
-        for (native_playlist_id) in self.current_cursor:
-            return native_playlist_id
+        max_playlist_song_timestamp=self.cnx.execute(query).scalar()
+        return max_playlist_song_timestamp
 
     
-    def insert_song_instance(self,song_id,web_station_id,native_playlist_id):
+    def insert_song_instance(self,song_id,web_station_id,playlist_song_timestamp):
             
-            query=('''INSERT INTO song_instance_t (song_id,web_station_id, native_playlist_id) '''
-                   +'''VALUES (%s, %s, %s)''')
+            query=f"INSERT INTO {self.schema}.song_instance_t (song_id,web_station_id, playlist_song_timestamp) "\
+                   f"VALUES ({song_id}, {web_station_id}, '{playlist_song_timestamp}')"
             
-            self.current_cursor.execute(query,(song_id,web_station_id,native_playlist_id))
-            self.cnx.commit()
+            self.cnx.execute(query)
+            
     
     def get_artist_id (self,artist_name):
         
-        query = ('''SELECT artist_id FROM artist_t WHERE artist_name = %s''')
-
-        self.current_cursor.execute(query,(artist_name,))
-        
-        for(artist_id) in self.current_cursor:
-            return artist_id
+        query = f"SELECT artist_id FROM {self.schema}.artist_t WHERE artist_name = '{artist_name}'"
+        artist_id = self.cnx.execute(query).scalar()
+        return artist_id
         
     def insert_new_artist(self,artist_name):
-        
-        query = ('''INSERT INTO artist_t (artist_name)'''
-                 +'''VALUES (%s)''')
-        
-        self.current_cursor.execute(query,(artist_name,))
-        self.cnx.commit()
+
+        query = f"INSERT INTO {self.schema}.artist_t (artist_name) VALUES ('{artist_name}')"\
+            "RETURNING artist_id"
+        new_artist_id=self.cnx.execute(query).scalar()
+        return new_artist_id
         
     def get_album_id (self,album_name, artist_id):
         
-        query = ('''SELECT album_id FROM album_t '''
-                 +'''WHERE album_name = %s '''
-                 +'''AND artist_id = %s''')
-        self.current_cursor.execute(query,(album_name, artist_id))
+        query =  f"SELECT album_id FROM {self.schema}.album_t "\
+                 f"WHERE album_name = '{album_name}' "\
+                 f"AND artist_id = {artist_id}"
+
+        album_id = self.cnx.execute(query).scalar()
         
-        for (album_id) in self.current_cursor:
-            return album_id
+        return album_id
         
     def insert_new_album(self,album_name, artist_id):
         
-        query = ('''INSERT INTO album_t (album_name, artist_id) '''
-                 +'''VALUES (%s,%s)''')
+        query = f"INSERT INTO {self.schema}.album_t (album_name, artist_id)"\
+                f"VALUES ('{album_name}',{artist_id}) "\
+                "RETURNING album_id"
         
-        self.current_cursor.execute(query,(album_name, artist_id))
-        self.cnx.commit()
+        new_album_id=self.cnx.execute(query).scalar()
+        return new_album_id
+        
         
     def get_song_id (self,song_name, artist_id,album_id):
         '''
         Returns song id for passed parameters
         Params: song_name, artist_id, album_id
         '''
-        query = ('''SELECT song_id  FROM song_t '''
-                 +'''WHERE song_name = %s '''
-                 +'''AND artist_id = %s '''
-                 +'''AND album_id = %s ''')
+        query = f"SELECT song_id  FROM {self.schema}.song_t "\
+                 f"WHERE song_name = '{song_name}' "\
+                 f"AND artist_id = {artist_id} "\
+                 f"AND album_id = {album_id}"
         
-        self.current_cursor.execute(query,(song_name, artist_id,album_id))
-        
-        for (song_id) in self.current_cursor:
-            return song_id
+        song_id = self.cnx.execute(query).scalar()
+        return song_id
         
     def insert_new_song(self,song_name, artist_id,album_id):
         '''
@@ -150,70 +124,65 @@ class DBConnection(object):
         params: song_name, artist_id, album_id
         '''
         
-        query = ('''INSERT INTO song_t (song_name, artist_id,album_id) ''' 
-                 +'''VALUES (%s, %s, %s)''')
+        query = f"INSERT INTO {self.schema}.song_t (song_name, artist_id,album_id) "\
+                f"VALUES ('{song_name}', {artist_id}, {album_id})"\
+                "RETURNING song_id"
         
-        self.current_cursor.execute(query,(song_name, artist_id,album_id))
-        self.cnx.commit()
+        new_song_id=self.cnx.execute(query).scalar()
+        return new_song_id
         
+    def get_station_url (self,web_station_id):
+        
+        query = f"SELECT web_station_url FROM {self.schema}.web_station_t "\
+            f"WHERE web_station_id = '{web_station_id}'"
+        url=self.cnx.execute(query).scalar()
+        return url      
+
     def get_station_info(self):
         '''
         returns list of station dictionaries
         '''
         station_list=[]
-        query = ('''SELECT web_station_id,web_station_name,web_station_playlist_url_txt FROM web_station_t ORDER BY web_station_id'''
-                 )
+        query = "SELECT web_station_id,web_station_name,web_station_url"\
+                f"FROM {self.schema}.web_station_t ORDER BY web_station_id"
         
-        self.current_cursor.execute(query)
+        results=self.cnx.execute(query)
         
-        for (web_station_id,web_station_name,web_station_playlist_url_txt) in self.current_cursor:
-            station_info = {'web_station_id':web_station_id, 'web_station_name':web_station_name, 'url_text':web_station_playlist_url_txt }
+        #this likley needs to be re-worked, maybe bind table schema
+        for (web_station_id,web_station_name,web_station_url) in results:
+            station_info = {'web_station_id':web_station_id, 'web_station_name':web_station_name, 'url_text':web_station_url }
             station_list.append(station_info)
         return station_list
         
     def list_stations (self):
-        
-        query = ('''SELECT web_station_name FROM web_station_t''')
+
+        query = f"SELECT web_station_name FROM {self.schema}.web_station_t"
         
         station_names = []
-        self.current_cursor.execute(query)
+        results=self.cnx.execute(query)
         
-        for (web_station_name) in self.current_cursor:
+        #TODO rework possible
+        for (web_station_name) in results:
             station_names.append(web_station_name,)
         
         return station_names
-    
+
     def close_connection(self):
-        #self.cnx.close()
-        if(self.cnx.is_connected()):
-            self.current_cursor.close()
+        if(self.cnx.closed is False):
             self.cnx.close()
-        
+
+
     def del_song_id (self,song_id):
-        query =('DELETE FROM song_t WHERE song_id = %s')
-        self.current_cursor.execute(query,(song_id,))
-        self.cnx.commit()
-  
+        query =f"DELETE FROM {self.schema}.song_t WHERE song_id = {song_id}"
+        self.cnx.execute(query)
+        
           
     def del_artist_id(self,artist_id):
-        query =('DELETE FROM artist_t WHERE artist_id = %s')
-        self.current_cursor.execute(query,(artist_id,))
-        self.cnx.commit()
-
+        query =f"DELETE FROM {self.schema}.artist_t WHERE artist_id = {artist_id}"
+        self.cnx.execute(query)
         
+
     def del_album_id(self,album_id):      
-        query =('''DELETE FROM album_t WHERE album_id = %s''')
-        self.current_cursor.execute(query,(album_id,))
-        self.cnx.commit()
-
-            
-        
-        
-        
-        
-        
-        
-            
-        
-        
-        
+        query =f"DELETE FROM {self.schema}.album_t WHERE album_id = {album_id}"
+        self.cnx.execute(query)
+           
