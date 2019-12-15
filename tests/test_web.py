@@ -19,13 +19,9 @@ class TestWeb(unittest.TestCase):
     def test_get_page(self):
         browser = be.BrowserEngine().get_browser()
         browser.get('https://en.wikipedia.org/wiki/Web_navigation')
-        driver_logs = browser.get_log('browser')
-        #browser.implicitly_wait(100)
-        for log in driver_logs:
-            print(log)
-        assert 'Web' in browser.title
+        print(str(browser.title))
 
-        self.assertTrue(True,'Issue getting web page')
+        self.assertTrue('Web' in browser.title,'Issue getting web page')
 
 
 
