@@ -185,4 +185,3 @@ class DBConnection(object):
     def del_album_id(self,album_id):      
         query =f"DELETE FROM {self.schema}.album_t WHERE album_id = {album_id}"
         self.cnx.execute(query)
-           

@@ -6,7 +6,7 @@ Created on Jan 21, 2019
 import unittest
 
 from radio_webscraper.utils import Utils
-from radio_webscraper.dao import DBConnection
+from radio_webscraper.db_interface.dao import DBConnection
 import logging
 import datetime
 
@@ -16,9 +16,9 @@ class TestInserts(unittest.TestCase):
 
     def setUp(self):
         
-        Utils.initialize_logging(self)
+        Utils.initialize_logging()
         
-        db_config = Utils.get_config(self)
+        db_config = Utils.get_config()
         self.cnx = DBConnection(db_config['user'], 
                                  db_config['password'],
                                  db_config['host'], 

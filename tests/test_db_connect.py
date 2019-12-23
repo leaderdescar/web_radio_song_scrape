@@ -7,7 +7,7 @@ import unittest
 import json
 import pathlib
 from radio_webscraper.utils import Utils
-from radio_webscraper.dao import DBConnection
+from radio_webscraper.db_interface.dao import DBConnection
 
 
 
@@ -23,14 +23,14 @@ class TestDB(unittest.TestCase):
         with open(cur_dir +'/config/config.json', 'r') as f:
             config = json.load(f)
             
-        self.assertEqual(config['DEFAULT']['host'], 'localhost', 'config file is not correct')
+        self.assertEqual(config['DEFAULT']['host'], '192.168.86.39', 'config file is not correct')
     
     def test_db_config_util(self):
-        db_config = Utils.get_config(self)
-        self.assertEqual(db_config['host'], 'localhost', 'get_config method is incorrect')
+        db_config = Utils.get_config()
+        self.assertEqual(db_config['host'], '192.168.86.39', 'get_config method is incorrect')
         
     def test_db_connection(self):
-        db_config = Utils.get_config(self)
+        db_config = Utils.get_config()
         cnx = DBConnection(db_config['user'], 
                                  db_config['password'],
                                  db_config['host'], 

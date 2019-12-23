@@ -20,12 +20,14 @@ class Utils(object):
         '''
         Constructor
         '''
-    def return_timestamp(self):
+    @staticmethod
+    def return_timestamp():
         ts = time.time()
         st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
         return st
     
-    def get_config(self):
+    @staticmethod
+    def get_config():
         cur_dir = str(pathlib.Path.cwd())
         path_parts = cur_dir.partition('/RadioWebScraper')
         cur_dir = path_parts[0]
@@ -40,8 +42,9 @@ class Utils(object):
         db_config_dic['schema'] = config['DEFAULT']['schema']
         
         return db_config_dic
-    
-    def initialize_logging(self):
+
+    @staticmethod
+    def initialize_logging():
         
         #TODO: change to config based on environment
         logger = logging.getLogger(__name__)
