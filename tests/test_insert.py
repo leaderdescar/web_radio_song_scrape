@@ -73,7 +73,7 @@ class TestInserts(unittest.TestCase):
         current_timestamp=str(datetime.datetime.fromtimestamp(1574946234000/1000.0))
         print('Current Timestamp:'+ current_timestamp)
         self.cnx.insert_song_instance('1','921',current_timestamp)
-        max_timestamp=str(self.cnx.last_song_by_staion_id_saved(921))
+        max_timestamp=str(self.cnx.get_last_song_time_by_staion_id(921))
         self.assertTrue(current_timestamp==max_timestamp, 'issue inserting song instance')
 
     def test_get_station_url(self):

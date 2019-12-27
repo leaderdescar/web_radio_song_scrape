@@ -67,7 +67,7 @@ class SongInsertEngine(object):
         #miliseconds need to be converted in df to timestamp
         #should be done in each parse acording to source site needs
         self.cnx.get_connection()
-        max_timestamp=self.cnx.last_song_by_staion_id_saved(web_station_id)
+        max_timestamp=self.cnx.get_last_song_time_by_staion_id(web_station_id)
         filtered_song_df = song_df[song_df['timestamp'] > max_timestamp]
         self.cnx.close_connection()
 

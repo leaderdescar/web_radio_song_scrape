@@ -8,7 +8,7 @@ from radio_webscraper.utils import Utils
 import logging
 from sqlalchemy.engine import create_engine
 import pg8000
-
+import datetime
 
 
 
@@ -27,6 +27,7 @@ class DBConnection(object):
         self.host=host
         self.database=database
         self.schema=schema
+        self.last_playlist_song_timestamp=''
 
 
 
@@ -52,7 +53,7 @@ class DBConnection(object):
         else:
             return False 
         
-    def last_song_by_staion_id_saved (self,web_station_id):
+    def get_last_song_time_by_staion_id (self,web_station_id):
         '''
         Checks if the current song is already in the DB based on page's
          song timestamp
@@ -60,8 +61,11 @@ class DBConnection(object):
         query=f"SELECT MAX(playlist_song_timestamp) as check_value FROM {self.schema}.song_instance_t "\
                f"WHERE web_station_id = {web_station_id}"
         
-        max_playlist_song_timestamp=self.cnx.execute(query).scalar()
-        return max_playlist_song_timestamp
+        self.last_playlist_song_timestamp=self.cnx.execute(query).scalar()
+        if self.last_playlist_song_timestamp is None:
+            self.last_playlist_song_timestamp=datetime.datetime.strptime('2017-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+
+        return self.last_playlist_song_timestamp
 
     
     def insert_song_instance(self,song_id,web_station_id,playlist_song_timestamp):
@@ -185,4 +189,12 @@ class DBConnection(object):
         query=f'SELECT Count(*) as cnt FROM {self.schema}.song_instance_t WHERE web_station_id = 1 '
         song_cnt=self.cnx.execute(query).scalar()
         return song_cnt
+    
+    def get_song_instance_count(self,web_station_id):
+
+        query=f'SELECT Count(*) as cnt FROM {self.schema}.song_instance_t WHERE web_station_id = {web_station_id} '\
+            f'AND playlist_song_timestamp > %s'
+        song_cnt=self.cnx.execute(query,(str(self.last_playlist_song_timestamp),)).scalar()
+        return song_cnt
+
 

@@ -14,6 +14,7 @@ from radio_webscraper.db_interface.dao import DBConnection
 from radio_webscraper.browser import browser_engine as be
 from radio_webscraper.parsers.triton_parser import TritonParser
 from radio_webscraper.processor.song_insert_engine import SongInsertEngine
+from radio_webscraper.processor.scrape_songs_engine import ScrapeSongs
 
 class TestIntergration(unittest.TestCase):
 
@@ -59,14 +60,14 @@ class TestIntergration(unittest.TestCase):
         self.cnx.close_connection()
 
     def test_get_617_page(self):
-        url=self.cnx.get_station_url('921')
-        self.browser.get(url)
+        station_dict=self.cnx.get_station_url_and_type('921')
+        self.browser.get(station_dict['url'])
         self.assertTrue('indie617' in self.browser.title, 'Issue geting 617 song history page')
 
     def test_get_triton_song_section(self):
-        url=self.cnx.get_station_url('921')
+        station_dict=self.cnx.get_station_url_and_type('921')
         tri_pars = TritonParser()
-        song_df=tri_pars.get_triton_df(url)
+        song_df=tri_pars.get_triton_df(station_dict['url'])
 
         self.assertTrue(len(song_df)>0, "Issue parseing page")
 
@@ -83,13 +84,26 @@ class TestIntergration(unittest.TestCase):
         self.assertTrue(len(df.index)==9, 'Issue with filtering dataframe by timestamp')
 
     def test_bulk_song_instance_inserts(self):
+        dummy=self.cnx.get_last_song_time_by_staion_id(1)
         sie=SongInsertEngine()
         df=Utils.convert_df_milisec_to_timestamp(self.test_song_df)
         df=sie.filter_df_by_web_id_time(df,1)
         sie.process_song_instances(df,1)
-        insert_cnt=self.cnx.get_test_song_instance_cnt()
-        #number of filter rows plus inserted row for filter
-        self.assertTrue(insert_cnt==10,'Issue inserting song instances')
+        insert_cnt=self.cnx.get_song_instance_count(1)
+        self.assertTrue(insert_cnt==9,'Issue inserting song instances')
+
+    def test_negative_scrape_songs_1(self):
+        scraper=ScrapeSongs()
+        results=scraper.scrape_songs(344)
+        self.assertTrue(results=='Web station with id 344 not yet set up for scraping')
+
+    def test_scrape_songs(self):
+        scraper=ScrapeSongs()
+        results=scraper.scrape_songs(921)
+        print(str(results))
+        self.assertTrue(results is None, "Issue with scraping songs")
+
+
 
 
 
