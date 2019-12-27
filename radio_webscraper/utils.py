@@ -68,7 +68,6 @@ class Utils(object):
         
     @staticmethod
     def convert_df_milisec_to_timestamp(df):
-
         df['timestamp']=pd.to_datetime(df['timestamp'],unit='ms')
         return df
         
