@@ -52,8 +52,8 @@ class TestParsing(unittest.TestCase):
         song_dict_list=self.tri_parse.get_triton_songs_list(triton_song_block)
         song_df=self.tri_parse.convert_triton_list_to_df(song_dict_list)
         column_list=list(song_df.columns.values)
-        self.assertTrue(column_list[0]=='song_name', 'Issue changing name of columns')
-        self.assertTrue(song_df.iloc[0,0]=='Fluttering In The Floodlights', 'Issue getting dataframe')
+        self.assertTrue(column_list[1]=='song_name', 'Issue changing name of columns')
+        self.assertTrue(song_df.iloc[0,1]=='Fluttering In The Floodlights', 'Issue getting dataframe')
 
 
 

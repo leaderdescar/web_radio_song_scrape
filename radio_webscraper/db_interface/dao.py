@@ -72,36 +72,29 @@ class DBConnection(object):
             self.cnx.execute(query)
             
     
-    def get_artist_id (self,artist_name):
-        
-        query = f"SELECT artist_id FROM {self.schema}.artist_t WHERE artist_name = '{artist_name}'"
-        artist_id = self.cnx.execute(query).scalar()
+    def get_artist_id (self,artist_name):      
+        query = f"SELECT artist_id FROM {self.schema}.artist_t WHERE artist_name = %s"
+        artist_id = self.cnx.execute(query,(artist_name,)).scalar()
         return artist_id
         
     def insert_new_artist(self,artist_name):
-
-        query = f"INSERT INTO {self.schema}.artist_t (artist_name) VALUES ('{artist_name}')"\
-            "RETURNING artist_id"
-        new_artist_id=self.cnx.execute(query).scalar()
+        query=f"INSERT INTO {self.schema}.artist_t (artist_name) VALUES (%s) RETURNING artist_id"
+        new_artist_id=self.cnx.execute(query,(artist_name,)).scalar()
         return new_artist_id
         
     def get_album_id (self,album_name, artist_id):
-        
         query =  f"SELECT album_id FROM {self.schema}.album_t "\
-                 f"WHERE album_name = '{album_name}' "\
-                 f"AND artist_id = {artist_id}"
-
-        album_id = self.cnx.execute(query).scalar()
-        
+                 f"WHERE album_name = %s "\
+                 f"AND artist_id = %s"
+        album_id = self.cnx.execute(query,(album_name,artist_id)).scalar() 
         return album_id
         
     def insert_new_album(self,album_name, artist_id):
-        
         query = f"INSERT INTO {self.schema}.album_t (album_name, artist_id)"\
-                f"VALUES ('{album_name}',{artist_id}) "\
+                f"VALUES (%s,%s) "\
                 "RETURNING album_id"
         
-        new_album_id=self.cnx.execute(query).scalar()
+        new_album_id=self.cnx.execute(query,(album_name,artist_id)).scalar()
         return new_album_id
         
         
@@ -111,11 +104,11 @@ class DBConnection(object):
         Params: song_name, artist_id, album_id
         '''
         query = f"SELECT song_id  FROM {self.schema}.song_t "\
-                 f"WHERE song_name = '{song_name}' "\
-                 f"AND artist_id = {artist_id} "\
-                 f"AND album_id = {album_id}"
+                 f"WHERE song_name = %s "\
+                 f"AND artist_id = %s "\
+                 f"AND album_id = %s"
         
-        song_id = self.cnx.execute(query).scalar()
+        song_id = self.cnx.execute(query,(song_name,artist_id,album_id)).scalar()
         return song_id
         
     def insert_new_song(self,song_name, artist_id,album_id):
@@ -123,48 +116,46 @@ class DBConnection(object):
         Inserts new song into song table
         params: song_name, artist_id, album_id
         '''
-        
         query = f"INSERT INTO {self.schema}.song_t (song_name, artist_id,album_id) "\
-                f"VALUES ('{song_name}', {artist_id}, {album_id})"\
+                f"VALUES (%s, %s, %s)"\
                 "RETURNING song_id"
         
-        new_song_id=self.cnx.execute(query).scalar()
+        new_song_id=self.cnx.execute(query,(song_name,artist_id,album_id)).scalar()
         return new_song_id
         
-    def get_station_url (self,web_station_id):
-        
-        query = f"SELECT web_station_url FROM {self.schema}.web_station_t "\
-            f"WHERE web_station_id = '{web_station_id}'"
-        url=self.cnx.execute(query).scalar()
-        return url      
+    def get_station_url_and_type (self,web_station_id):
+        result_dict={}
+        query = f"SELECT web_station_url, web_station_type_code FROM {self.schema}.web_station_t "\
+            f"WHERE web_station_id = %s"
+        results=self.cnx.execute(query,(web_station_id,))
+        for url,type_code in results:
+            result_dict={'url':url,'type_code':type_code}
+        return result_dict      
 
-    def get_station_info(self):
+    def get_info_all_stations(self):
         '''
         returns list of station dictionaries
         '''
         station_list=[]
-        query = "SELECT web_station_id,web_station_name,web_station_url"\
+        query = "SELECT web_station_id,web_station_name,web_station_url, web_station_type_code"\
                 f"FROM {self.schema}.web_station_t ORDER BY web_station_id"
         
         results=self.cnx.execute(query)
         
         #this likley needs to be re-worked, maybe bind table schema
-        for (web_station_id,web_station_name,web_station_url) in results:
-            station_info = {'web_station_id':web_station_id, 'web_station_name':web_station_name, 'url_text':web_station_url }
+        for (web_station_id,web_station_name,web_station_url,web_station_type_code) in results:
+            station_info = {'web_station_id':web_station_id, 'web_station_name':web_station_name, 'url_text':web_station_url, 'web_station_type_code':web_station_type_code}
             station_list.append(station_info)
         return station_list
         
-    def list_stations (self):
-
+    def list_stations_by_name (self):
         query = f"SELECT web_station_name FROM {self.schema}.web_station_t"
-        
         station_names = []
         results=self.cnx.execute(query)
         
         #TODO rework possible
         for (web_station_name) in results:
             station_names.append(web_station_name,)
-        
         return station_names
 
     def close_connection(self):
@@ -185,3 +176,13 @@ class DBConnection(object):
     def del_album_id(self,album_id):      
         query =f"DELETE FROM {self.schema}.album_t WHERE album_id = {album_id}"
         self.cnx.execute(query)
+
+    def del_test_song_instances(self):
+        query=f'DELETE FROM {self.schema}.song_instance_t WHERE web_station_id = 1'
+        self.cnx.execute(query)
+
+    def get_test_song_instance_cnt(self):
+        query=f'SELECT Count(*) as cnt FROM {self.schema}.song_instance_t WHERE web_station_id = 1 '
+        song_cnt=self.cnx.execute(query).scalar()
+        return song_cnt
+

@@ -33,6 +33,7 @@ class TritonParser(object):
         songs_block=self.get_triton_songs_block(source_page)
         song_dict_list=self.get_triton_songs_list(songs_block)
         song_df=self.convert_triton_list_to_df(song_dict_list)
+        song_df=Utils.convert_df_milisec_to_timestamp(song_df)
 
         return song_df
 
@@ -97,6 +98,10 @@ class TritonParser(object):
                                       'album':'album_name'}, inplace = True)
         
         return song_df
+
+    def convert_def_mils_to_timestamp(self,song_df):
+
+        song_df=pd
 
 
 

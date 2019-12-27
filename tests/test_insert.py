@@ -46,23 +46,25 @@ class TestInserts(unittest.TestCase):
         self.cnx.close_connection()
 
     def test1_insert_artist(self):
-        new_artist_id=self.cnx.insert_new_artist('test_artist_name')
-        inserted_artist_id = self.cnx.get_artist_id('test_artist_name')
+        test_artist_name='test_@artist_name'
+        print(test_artist_name)
+        new_artist_id=self.cnx.insert_new_artist(test_artist_name)
+        inserted_artist_id = self.cnx.get_artist_id(test_artist_name)
         
         self.assertTrue(new_artist_id == inserted_artist_id, 'Issue with inserting Artist')
         self.artist_id = new_artist_id
 
 
     def test2_insert_album(self):
-        new_album_id=self.cnx.insert_new_album('test_album_name', '1')
-        inserted_album_id=self.cnx.get_album_id('test_album_name', '1')
+        new_album_id=self.cnx.insert_new_album('test_album_name', 1)
+        inserted_album_id=self.cnx.get_album_id('test_album_name', 1)
         
         self.assertTrue(new_album_id==inserted_album_id, 'Issue with inserting album')
         self.album_id = new_album_id
 
     def test3_insert_song(self):
-        new_song_id=self.cnx.insert_new_song('test_song', '1', '1')
-        inserted_song_id=self.cnx.get_song_id('test_song', '1', '1')
+        new_song_id=self.cnx.insert_new_song('test_song', 1, 1)
+        inserted_song_id=self.cnx.get_song_id('test_song', 1, 1)
         
         self.assertTrue(new_song_id==inserted_song_id, 'issue inserting or selecting song')
         self.song_id = new_song_id  
@@ -71,16 +73,13 @@ class TestInserts(unittest.TestCase):
         current_timestamp=str(datetime.datetime.fromtimestamp(1574946234000/1000.0))
         print('Current Timestamp:'+ current_timestamp)
         self.cnx.insert_song_instance('1','921',current_timestamp)
-
         max_timestamp=str(self.cnx.last_song_by_staion_id_saved(921))
-        print('Max Timestamp: '+max_timestamp)
-      
         self.assertTrue(current_timestamp==max_timestamp, 'issue inserting song instance')
 
     def test_get_station_url(self):
-        url = self.cnx.get_station_url(921)
-        self.assertTrue(url == 'http://player.listenlive.co/35471/en/songhistory', 'Issue return url from DB')
-        
+        result_dict = self.cnx.get_station_url_and_type(921)
+        self.assertTrue(result_dict['url'] == 'http://player.listenlive.co/35471/en/songhistory', 'Issue return url from DB')
+        self.assertTrue(result_dict['type_code']=='tri','Issue with returning type code')
 '''
     def test_insert_song_instance(self):
         pass

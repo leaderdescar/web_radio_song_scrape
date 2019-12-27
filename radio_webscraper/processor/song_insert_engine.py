@@ -5,6 +5,7 @@ Created on Dec 23, 2019
 '''
 from radio_webscraper.utils import Utils
 from radio_webscraper.db_interface.dao import DBConnection
+import pandas as pd
 
 
 
@@ -43,29 +44,40 @@ class SongInsertEngine(object):
 
         self.cnx.get_connection()
 
-        for row in song_df.head().itertuples():
-            self.artist_id=self.process_artist(row.artist_name)
-            self.album_id=self.process_album(row.album_name,self.artist_id)
-            self.song_id=self.process_song(row.song_name,self.artist_id,self.album_id)
-            self.cnx.insert_song_instance(self.song_id,web_station_id,row.timestamp)
+        for index, row in song_df.iterrows():
+            if pd.notnull(row.song_name):
+                self.artist_id = self.process_artist(row.artist_name)
+                self.album_id = self.process_album(row.album_name, self.artist_id)
+                self.song_id = self.process_song( row.song_name, self.artist_id, self.album_id)
+                self.cnx.insert_song_instance( self.song_id, web_station_id, row.timestamp)
+
+                self.artist_id=''
+                self.album_id=''
+                self.song_id=''
 
         self.cnx.close_connection()
 
-        self.artist_id=''
-        self.album_id=''
-        self.song_id=''
+
 
     def filter_df_by_web_id_time(self,song_df,web_station_id):
         #filter the datframe to only keep songs greater
         #than the max timestamp for a webstation in
         #song instances
 
+        #miliseconds need to be converted in df to timestamp
+        #should be done in each parse acording to source site needs
+        self.cnx.get_connection()
         max_timestamp=self.cnx.last_song_by_staion_id_saved(web_station_id)
-        filtered_song_df = song_df > (max_timestamp.timestamp()*1000)
+        filtered_song_df = song_df[song_df['timestamp'] > max_timestamp]
+        self.cnx.close_connection()
+
         return filtered_song_df
 
 
     def process_artist(self,artist_name):
+
+        if pd.isnull(artist_name):
+            artist_name='Unknown Artist'
 
         artist_id_results=self.cnx.get_artist_id(artist_name)
 
@@ -77,6 +89,9 @@ class SongInsertEngine(object):
 
 
     def process_album(self,album_name,artist_id):
+
+        if pd.isnull(album_name):
+            album_name='Unknown Album Name'
 
         album_id_results=self.cnx.get_album_id(album_name,artist_id)
 

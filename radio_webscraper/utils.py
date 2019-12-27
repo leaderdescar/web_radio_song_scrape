@@ -8,6 +8,7 @@ import datetime
 import pathlib
 import json
 import logging
+import pandas as pd
 
 
 class Utils(object):
@@ -64,4 +65,10 @@ class Utils(object):
         # Add handlers to the logger
         logger.addHandler(c_handler)
         logger.addHandler(f_handler)
+        
+    @staticmethod
+    def convert_df_milisec_to_timestamp(df):
+
+        df['timestamp']=pd.to_datetime(df['timestamp'],unit='ms')
+        return df
         
