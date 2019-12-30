@@ -9,8 +9,8 @@ Returns songs in a dataframe
 import logging
 import pandas as pd
 from bs4 import BeautifulSoup
-from radio_webscraper.utils import Utils
-from radio_webscraper.browser import browser_engine as be
+from utils import Utils
+from browser import browser_engine as be
 
 
 class TritonParser(object):

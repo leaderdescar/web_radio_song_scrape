@@ -4,11 +4,12 @@ Created on Dec 29, 2018
 @author: papa
 '''
 
-from radio_webscraper.utils import Utils
+from utils import Utils
 import logging
 from sqlalchemy.engine import create_engine
 import pg8000
 import datetime
+import inspect
 
 
 
@@ -22,12 +23,16 @@ class DBConnection(object):
         '''
         Constructor
         '''
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         self.user=user
         self.password=password
         self.host=host
         self.database=database
         self.schema=schema
         self.last_playlist_song_timestamp=''
+
+
 
 
 
@@ -41,7 +46,9 @@ class DBConnection(object):
         self.connection_pool=create_engine(db_url,max_overflow=0)
             
     def get_connection(self):
+        self.logger.debug('Getting a connection')
         self.cnx=self.connection_pool.connect()
+        self.logger.debug('Obtained a connection from pool')
             
     def run_test(self):
         query=('''SELECT VERSION ()''')
@@ -128,12 +135,16 @@ class DBConnection(object):
         return new_song_id
         
     def get_station_url_and_type (self,web_station_id):
+
+        self.logger.debug('Running query for url and type code')
         result_dict={}
         query = f"SELECT web_station_url, web_station_type_code FROM {self.schema}.web_station_t "\
             f"WHERE web_station_id = %s"
         results=self.cnx.execute(query,(web_station_id,))
+        self.logger.debug('Putting results in dictionary')
         for url,type_code in results:
             result_dict={'url':url,'type_code':type_code}
+        self.logger.debug('Returinging dictionary results')
         return result_dict      
 
     def get_info_all_stations(self):

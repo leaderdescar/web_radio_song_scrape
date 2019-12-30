@@ -1,5 +1,5 @@
 from selenium import webdriver
-from radio_webscraper.utils import Utils
+from utils import Utils
 import logging
 
 class BrowserEngine(object):
@@ -7,7 +7,8 @@ class BrowserEngine(object):
         '''
         Constructor
         '''
-        
+        self.logger=logging.getLogger(self.__class__.__name__)
+
         options = webdriver.ChromeOptions()
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--incognito')

@@ -3,9 +3,10 @@ Created on Dec 23, 2019
 
 @author: papa
 '''
-from radio_webscraper.utils import Utils
-from radio_webscraper.db_interface.dao import DBConnection
+from utils import Utils
+from db_interface.dao import DBConnection
 import pandas as pd
+import logging
 
 
 
@@ -17,21 +18,15 @@ class SongInsertEngine(object):
     '''
 
 
-    def __init__(self):
+    def __init__(self,cnx):
         '''
         Constructor
         '''
-        Utils.initialize_logging()
+        self.logger=logging.getLogger(self.__class__.__name__)
         
         db_config = Utils.get_config()
 
-        self.cnx = DBConnection(db_config['user'], 
-                                 db_config['password'],
-                                 db_config['host'], 
-                                 db_config['database'],
-                                 db_config['schema'])
-        self.cnx.create_cnx_pool()
-        
+        self.cnx = cnx
         
         self.artist_id = ''
         self.album_id = ''
@@ -42,7 +37,7 @@ class SongInsertEngine(object):
         #Iterate over each df row, insert in
         #Df is already filtered for latest played songs
 
-        self.cnx.get_connection()
+        self.logger.debug(str(song_df))
 
         for index, row in song_df.iterrows():
             if pd.notnull(row.song_name):
@@ -55,7 +50,7 @@ class SongInsertEngine(object):
                 self.album_id=''
                 self.song_id=''
 
-        self.cnx.close_connection()
+
 
 
 
@@ -66,10 +61,9 @@ class SongInsertEngine(object):
 
         #miliseconds need to be converted in df to timestamp
         #should be done in each parse acording to source site needs
-        self.cnx.get_connection()
         max_timestamp=self.cnx.get_last_song_time_by_staion_id(web_station_id)
         filtered_song_df = song_df[song_df['timestamp'] > max_timestamp]
-        self.cnx.close_connection()
+        
 
         return filtered_song_df
 

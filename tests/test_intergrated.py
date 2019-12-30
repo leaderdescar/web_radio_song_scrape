@@ -6,6 +6,7 @@ Created on Dec 23, 2019
 import pathlib
 import unittest
 import logging
+import logging.config
 import pandas
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -16,13 +17,18 @@ from radio_webscraper.parsers.triton_parser import TritonParser
 from radio_webscraper.processor.song_insert_engine import SongInsertEngine
 from radio_webscraper.processor.scrape_songs_engine import ScrapeSongs
 
+logging.config.fileConfig(fname='config/test_logging.conf', disable_existing_loggers=False)
+        
+logger=logging.getLogger(__name__)
+
 class TestIntergration(unittest.TestCase):
 
 
     def setUp(self):
         
-        Utils.initialize_logging()
-        
+
+
+        logger.info('*****Getting DB Conncetion*******')
         db_config = Utils.get_config()
         self.cnx = DBConnection(db_config['user'], 
                                  db_config['password'],
@@ -32,6 +38,7 @@ class TestIntergration(unittest.TestCase):
         self.cnx.create_cnx_pool()
         self.cnx.get_connection()
 
+        logger.info('******Opening Browser******')
         self.browser = be.BrowserEngine().get_browser()
 
         #create test dataframe
@@ -56,8 +63,13 @@ class TestIntergration(unittest.TestCase):
     def tearDown(self):
 
         #add clean up of song instance
+        self.browser.close()
+        logger.info('Browser closed')
+        logger.info('Deleting Song Instances')
         self.cnx.del_test_song_instances()
+        logger.info('Closing DB Connection')
         self.cnx.close_connection()
+        logger.info('Testing module complete')
 
     def test_get_617_page(self):
         station_dict=self.cnx.get_station_url_and_type('921')
@@ -78,14 +90,14 @@ class TestIntergration(unittest.TestCase):
         self.assertTrue(song_ts==test_ts,'Issue with converting milliscoend to timestamp')
 
     def test_df_timestamp_filter(self):
-        sie=SongInsertEngine()
+        sie=SongInsertEngine(self.cnx)
         df=Utils.convert_df_milisec_to_timestamp(self.test_song_df)
         df=sie.filter_df_by_web_id_time(df,1)
         self.assertTrue(len(df.index)==9, 'Issue with filtering dataframe by timestamp')
 
     def test_bulk_song_instance_inserts(self):
         dummy=self.cnx.get_last_song_time_by_staion_id(1)
-        sie=SongInsertEngine()
+        sie=SongInsertEngine(self.cnx)
         df=Utils.convert_df_milisec_to_timestamp(self.test_song_df)
         df=sie.filter_df_by_web_id_time(df,1)
         sie.process_song_instances(df,1)
@@ -93,12 +105,12 @@ class TestIntergration(unittest.TestCase):
         self.assertTrue(insert_cnt==9,'Issue inserting song instances')
 
     def test_negative_scrape_songs_1(self):
-        scraper=ScrapeSongs()
+        scraper=ScrapeSongs(self.cnx)
         results=scraper.scrape_songs(344)
         self.assertTrue(results=='Web station with id 344 not yet set up for scraping')
 
     def test_scrape_songs(self):
-        scraper=ScrapeSongs()
+        scraper=ScrapeSongs(self.cnx)
         results=scraper.scrape_songs(921)
         print(str(results))
         self.assertTrue(results is None, "Issue with scraping songs")

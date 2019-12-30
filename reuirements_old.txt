@@ -1,0 +1,8 @@
+pip install wheel
+pip install config
+pip install selenium
+pip install bs4
+pip install sqlalchemy
+pip install pg8000
+pip install pandas
+pip install flask
