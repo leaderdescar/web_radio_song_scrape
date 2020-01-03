@@ -49,7 +49,7 @@ class DBConnection(object):
             self.logger.info('Using unix sock for db url')
             db_url=(f"postgresql+pg8000://{self.user}:{self.password}@/{self.database}?unix_sock=/cloudsql/{self.unix_sock}/.s.PGSQL.5432")
 
-        self.connection_pool=create_engine(db_url,max_overflow=0)
+        self.connection_pool=create_engine(db_url,max_overflow=0,pool_recycle=21600)
         self.logger.info('Connection pool successfully created')
             
     def get_connection(self):

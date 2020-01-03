@@ -15,6 +15,7 @@ import sys
 from utils import Utils
 from db_interface.dao import DBConnection
 from processor.scrape_songs_engine import ScrapeSongs
+from retry import retry
 
 
 #Setup
@@ -42,6 +43,7 @@ except sqlalchemy.exc.SQLAlchemyError as error:
 
 
 @app.route('/scrape_songs_by_station_id/<int:id>',methods=['GET'])
+@retry(tries=3,delay=2,backoff=2,logger=logger)
 def scrape_songs_by_station_id(id):
     web_id = request.args.get('id')
     logger.info('Getting connection from pool')
