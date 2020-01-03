@@ -48,8 +48,9 @@ class ScrapeSongs(object):
 
 
     def parse_station_page(self,url,type_code):
-        print(type_code)
+        
         if type_code == 'tri':
+            self.logger.info('Using Triton Parser')
             parser=TritonParser()
             df=parser.get_triton_df(url)
             return df

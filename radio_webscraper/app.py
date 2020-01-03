@@ -21,7 +21,7 @@ from processor.scrape_songs_engine import ScrapeSongs
 
 app=Flask(__name__.split('.')[0])
 
-logging.config.fileConfig(fname='config/test_logging.conf', disable_existing_loggers=False)
+logging.config.fileConfig(fname='config/logging.conf', disable_existing_loggers=False)
 
 logger=logging.getLogger(__name__)
 
@@ -32,7 +32,9 @@ try:
                                  db_config['password'],
                                  db_config['host'],
                                  db_config['database'],
-                                 db_config['schema'])
+                                 db_config['schema'],
+                                 db_config['unix_sock'])
+                            
     cnx.create_cnx_pool()
 
 except sqlalchemy.exc.SQLAlchemyError as error:
@@ -42,8 +44,9 @@ except sqlalchemy.exc.SQLAlchemyError as error:
 @app.route('/scrape_songs_by_station_id/<int:id>',methods=['GET'])
 def scrape_songs_by_station_id(id):
     web_id = request.args.get('id')
-
+    logger.info('Getting connection from pool')
     cnx.get_connection()
+    logger.info('Connection successfully aquired')
     try:
         logger.info(f'Scraping songs for station id {id}')
         scraper = ScrapeSongs(cnx)
@@ -71,4 +74,4 @@ def scrape_songs_by_station_id(id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=False)

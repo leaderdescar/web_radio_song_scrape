@@ -38,7 +38,9 @@ WORKDIR /usr/src
 COPY ./requirements.txt .
 RUN pip3 install -r requirements.txt
 
-COPY ./config /usr/src/config
+COPY ./config/prod_logging.conf /usr/src/config/logging.conf
+COPY ./config/prod_config.json /usr/src/config/config.json
+RUN ls /usr/src/config
 COPY ./radio_webscraper /usr/src/radio_webscraper
 RUN ls 
 

@@ -19,7 +19,7 @@ class DBConnection(object):
     '''
 
 
-    def __init__(self,user,password,host,database,schema):
+    def __init__(self,user,password,host,database,schema,unix_sock):
         '''
         Constructor
         '''
@@ -30,6 +30,7 @@ class DBConnection(object):
         self.host=host
         self.database=database
         self.schema=schema
+        self.unix_sock=unix_sock
         self.last_playlist_song_timestamp=''
 
 
@@ -38,12 +39,18 @@ class DBConnection(object):
 
     def create_cnx_pool (self):
         #no need for try and catch, already built into sqlalchemy
-        db_url=("postgresql+pg8000://%s:%s@%s:5432/%s"%(self.user,
+        if self.unix_sock == 'none':
+            self.logger.info('Using host for db url')
+            db_url=("postgresql+pg8000://%s:%s@%s:5432/%s"%(self.user,
                                                 self.password,
                                                 self.host,
                                                 self.database))
+        else:
+            self.logger.info('Using unix sock for db url')
+            db_url=(f"postgresql+pg8000://{self.user}:{self.password}@/{self.database}?unix_sock=/cloudsql/{self.unix_sock}/.s.PGSQL.5432")
 
         self.connection_pool=create_engine(db_url,max_overflow=0)
+        self.logger.info('Connection pool successfully created')
             
     def get_connection(self):
         self.logger.debug('Getting a connection')

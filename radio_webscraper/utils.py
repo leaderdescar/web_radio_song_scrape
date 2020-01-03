@@ -41,6 +41,7 @@ class Utils(object):
         db_config_dic['host'] = config['DEFAULT']['host']
         db_config_dic['database'] = config['DEFAULT']['database']
         db_config_dic['schema'] = config['DEFAULT']['schema']
+        db_config_dic['unix_sock'] = config['DEFAULT']['unix_sock']
         
         return db_config_dic
 

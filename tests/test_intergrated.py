@@ -7,9 +7,7 @@ import pathlib
 import unittest
 import logging
 import logging.config
-import pandas
 from datetime import datetime
-from bs4 import BeautifulSoup
 from radio_webscraper.utils import Utils
 from radio_webscraper.db_interface.dao import DBConnection
 from radio_webscraper.browser import browser_engine as be

@@ -6,6 +6,7 @@ local_settings.py
 #project files:
 config/config.json
 config/.config.json
+config/prod_config.json
 *.pyc
 
 #enviornment related files
