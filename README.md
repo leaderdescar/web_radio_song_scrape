@@ -12,6 +12,8 @@ Chromedriver is needed for headless browser to get webpage.
 
 App is deployed in a container and I currently have this version running in Google Cloud Platform in Cloud Run.
 
-DO not have db in container, instead currently have db run in GCP Cloud SQL.
+Using GCP job automation to call endpoint every hour, but can be executed manually.
+
+Do not have db in container, instead currently have db run in GCP Cloud SQL.
 
 Logging only goes to standard out and err those are automatically monitored by GCP loggging andf can easily be viewed in the console.
